@@ -1,5 +1,5 @@
 {
-  "name": "tt-cli",
+  "name": "@bmkubia/tt-cli",
   "version": "0.0.0-dev",
   "description": "CLI for the Talk-to terminal experience",
   "license": "MIT",
@@ -16,6 +16,9 @@
     "type": "git",
     "url": "git+https://github.com/bmkubia/tt-cli.git",
     "directory": "npm/tt-cli"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "engines": {
     "node": ">=18"

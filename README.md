@@ -26,7 +26,7 @@ A fast command-line tool to talk to Claude, OpenAI, or local LM Studio models fr
 Install the packaged binary via npm:
 
 ```bash
-npm install -g tt-cli
+npm install -g @bmkubia/tt-cli
 ```
 
 This installs a lightweight Node.js launcher plus all platform-specific binaries

@@ -7,7 +7,7 @@ often as needed while keeping public releases deliberate.
 ## Distribution channels
 
 - **GitHub Releases** – canonical binaries for every supported platform.
-- **npm (`tt-cli`)** – wraps the Rust binary in a Node launcher (`npm install -g tt-cli`).
+- **npm (`@bmkubia/tt-cli`)** – wraps the Rust binary in a Node launcher (`npm install -g @bmkubia/tt-cli`).
 - **Homebrew cask** – uses the GitHub release tarballs; Homebrew automation usually
   opens a PR automatically, but we keep local tooling to help when manual bumps are required.
 
@@ -40,7 +40,7 @@ often as needed while keeping public releases deliberate.
    - Runs fmt/clippy/test once
    - Builds release binaries for macOS, Linux (glibc + musl), and Windows
    - Generates git-cliff notes, stages npm tarballs, and creates the GitHub Release
-   - Publishes `tt-cli` to npm (stable + `-alpha.N` tags only)
+   - Publishes `@bmkubia/tt-cli` to npm (stable + `-alpha.N` tags only)
 
 Monitor <https://github.com/bmkubia/tt-cli/actions/workflows/release.yml> for status. You can re-run failed jobs directly from the Actions UI.
 
@@ -82,6 +82,6 @@ Document any manual adjustments in the PR. When the cask merges, `brew install -
 
 - [ ] Workflow succeeds (lint + build matrix + release + npm publish)
 - [ ] GitHub Release shows the git-cliff notes
-- [ ] `npm info tt-cli version` reflects the new version (or `alpha` dist-tag)
+- [ ] `npm info @bmkubia/tt-cli version` reflects the new version (or `alpha` dist-tag)
 - [ ] `brew info tt` lists the latest version once the cask PR merges
 - [ ] README install instructions stay accurate (update if new channels are added)

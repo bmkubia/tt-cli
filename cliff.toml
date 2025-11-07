@@ -4,7 +4,7 @@
 header = """
 # Changelog
 
-You can install any of these versions: `npm install -g tt-cli@<version>`
+You can install any of these versions: `npm install -g @bmkubia/tt-cli@<version>`
 """
 
 body = """
