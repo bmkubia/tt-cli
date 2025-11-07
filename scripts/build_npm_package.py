@@ -22,7 +22,6 @@ TARGET_BINARIES = {
     "x86_64-apple-darwin": "tt",
     "aarch64-apple-darwin": "tt",
     "x86_64-pc-windows-msvc": "tt.exe",
-    "aarch64-pc-windows-msvc": "tt.exe",
 }
 
 

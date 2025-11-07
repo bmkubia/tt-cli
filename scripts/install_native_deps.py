@@ -19,7 +19,6 @@ BINARY_TARGETS = {
     "x86_64-apple-darwin": "tt",
     "aarch64-apple-darwin": "tt",
     "x86_64-pc-windows-msvc": "tt.exe",
-    "aarch64-pc-windows-msvc": "tt.exe",
 }
 ARTIFACT_BINARY_TEMPLATE = "tt-{target}{suffix}"
 
