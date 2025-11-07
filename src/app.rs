@@ -6,7 +6,7 @@ use clap::{Parser, Subcommand};
 #[command(
     name = "tt",
     about = "Ask Claude, OpenAI, or LM Studio models from the terminal with Codex-style answers",
-    version
+    version = crate::version::TT_VERSION
 )]
 pub struct Cli {
     #[command(subcommand)]

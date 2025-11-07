@@ -1,0 +1,23 @@
+{
+  "name": "tt-cli",
+  "version": "0.0.0-dev",
+  "description": "CLI for the Talk-to terminal experience",
+  "license": "MIT",
+  "bin": {
+    "tt": "bin/tt.js"
+  },
+  "type": "module",
+  "files": [
+    "bin",
+    "vendor",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bmkubia/tt-cli.git",
+    "directory": "npm/tt-cli"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

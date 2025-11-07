@@ -5,6 +5,7 @@ mod config;
 mod interaction;
 mod loader;
 mod models;
+mod version;
 
 use anyhow::Result;
 

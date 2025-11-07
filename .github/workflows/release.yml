@@ -1,0 +1,254 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "tt-v*.*.*"
+
+jobs:
+  tag-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate tag matches Cargo.toml version
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          [[ "${GITHUB_REF_TYPE}" == "tag" ]] || { echo "Not a tag push"; exit 1; }
+          [[ "${GITHUB_REF_NAME}" =~ ^tt-v[0-9]+\.[0-9]+\.[0-9]+(-(alpha|beta)(\.[0-9]+)?)?$ ]] \
+            || { echo "Tag '${GITHUB_REF_NAME}' has unexpected format"; exit 1; }
+
+          tag_ver="${GITHUB_REF_NAME#tt-v}"
+          cargo_ver="$(grep -m1 '^version' Cargo.toml | sed -E 's/version *= *"([^"]+)".*/\1/')"
+
+          [[ "${tag_ver}" == "${cargo_ver}" ]] \
+            || { echo "Tag ${tag_ver} does not match Cargo.toml ${cargo_ver}"; exit 1; }
+
+          echo "Tag ${tag_ver} validated"
+
+  lint:
+    needs: tag-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Cargo fmt
+        run: cargo fmt --all -- --check
+
+      - name: Cargo clippy
+        run: cargo clippy -- -D warnings
+
+      - name: Cargo test
+        run: cargo test --all-features
+
+  build:
+    name: Build - ${{ matrix.target }}
+    needs:
+      - tag-check
+      - lint
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        working-directory: .
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            target: x86_64-unknown-linux-musl
+          - runner: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-musl
+          - runner: macos-15
+            target: x86_64-apple-darwin
+          - runner: macos-15
+            target: aarch64-apple-darwin
+          - runner: windows-latest
+            target: x86_64-pc-windows-msvc
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: release-${{ matrix.target }}
+
+      - name: Install musl deps
+        if: contains(matrix.target, 'musl')
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y musl-tools pkg-config
+
+      - name: Cargo build
+        run: cargo build --release --target ${{ matrix.target }} --bin tt
+
+      - name: Stage artifacts (*nix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          set -euo pipefail
+          dest="dist/${{ matrix.target }}"
+          mkdir -p "$dest"
+
+          binary="target/${{ matrix.target }}/release/tt"
+          chmod +x "$binary"
+
+          cp "$binary" "$dest/tt-${{ matrix.target }}"
+          cp "$binary" "$dest/tt"
+
+          tar -C "$dest" -czf "$dest/tt-${{ matrix.target }}.tar.gz" tt
+          rm "$dest/tt"
+
+      - name: Stage artifacts (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $dest = "dist\${{ matrix.target }}"
+          New-Item -ItemType Directory -Force -Path $dest | Out-Null
+
+          $binary = "target\${{ matrix.target }}\release\tt.exe"
+          Copy-Item $binary "$dest\tt-${{ matrix.target }}.exe"
+          Copy-Item $binary "$dest\tt.exe"
+
+          tar -C $dest -czf "$dest/tt-${{ matrix.target }}.tar.gz" tt.exe
+          Compress-Archive -Path "$dest\tt.exe" -DestinationPath "$dest\tt-${{ matrix.target }}.zip" -Force
+          Remove-Item "$dest\tt.exe"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+          path: dist/${{ matrix.target }}/*
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+    outputs:
+      version: ${{ steps.release_name.outputs.version }}
+      tag: ${{ github.ref_name }}
+      should_publish_npm: ${{ steps.npm_publish.outputs.should_publish }}
+      npm_tag: ${{ steps.npm_publish.outputs.npm_tag }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+
+      - name: List artifacts
+        run: ls -R dist
+
+      - name: Determine version
+        id: release_name
+        run: |
+          version="${GITHUB_REF_NAME#tt-v}"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: git-cliff
+
+      - name: Generate release notes
+        run: git cliff --config cliff.toml --tag "${GITHUB_REF_NAME}" > dist/RELEASE_NOTES.md
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Stage npm packages
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TT_RELEASE_REPO: ${{ github.repository }}
+        run: |
+          python3 scripts/stage_npm_packages.py \
+            --release-version "${{ steps.release_name.outputs.version }}" \
+            --package tt-cli \
+            --workflow-url "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --output-dir dist/npm
+
+      - name: List npm artifacts
+        run: ls -R dist/npm
+
+      - name: Determine npm publish settings
+        id: npm_publish
+        run: |
+          set -euo pipefail
+          version="${{ steps.release_name.outputs.version }}"
+          if [[ "${version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "should_publish=true" >> "$GITHUB_OUTPUT"
+            echo "npm_tag=" >> "$GITHUB_OUTPUT"
+          elif [[ "${version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+-alpha\.[0-9]+$ ]]; then
+            echo "should_publish=true" >> "$GITHUB_OUTPUT"
+            echo "npm_tag=alpha" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_publish=false" >> "$GITHUB_OUTPUT"
+            echo "npm_tag=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ steps.release_name.outputs.version }}
+          tag_name: ${{ github.ref_name }}
+          body_path: dist/RELEASE_NOTES.md
+          files: |
+            dist/**/*.tar.gz
+            dist/**/*.zip
+            dist/npm/*.tgz
+
+      - name: Upload npm tarballs artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-tarballs
+          path: dist/npm/*.tgz
+
+  publish-npm:
+    if: ${{ needs.release.outputs.should_publish_npm == 'true' }}
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: npm-tarballs
+          path: dist/npm
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      - name: Update npm
+        run: npm install -g npm@latest
+
+      - name: Publish npm packages
+        env:
+          NPM_TAG: ${{ needs.release.outputs.npm_tag }}
+        run: |
+          set -euo pipefail
+          tag_args=()
+          if [[ -n "${NPM_TAG}" ]]; then
+            tag_args+=(--tag "${NPM_TAG}")
+          fi
+
+          for tarball in dist/npm/*.tgz; do
+            npm publish "$tarball" "${tag_args[@]}"
+          done

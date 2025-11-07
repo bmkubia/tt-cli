@@ -21,6 +21,27 @@ A fast command-line tool to talk to Claude, OpenAI, or local LM Studio models fr
 
 ## Installation
 
+### npm (recommended)
+
+Install the packaged binary via npm:
+
+```bash
+npm install -g tt-cli
+```
+
+This installs a lightweight Node.js launcher plus all platform-specific binaries
+into your global npm prefix (`~/.npm-global/bin/tt` or similar).
+
+### Homebrew
+
+Once the cask propagates you can simply:
+
+```bash
+brew install --cask tt
+```
+
+Homebrew downloads the notarized macOS tarball from GitHub Releases.
+
 ### Build from source
 
 1. Make sure you have Rust installed. If not, install it from [rustup.rs](https://rustup.rs/)
@@ -176,6 +197,11 @@ tt setup
 
 - Rust 1.70+ (for building)
 - A provider credential: Anthropic API key, OpenAI API key, or the LM Studio desktop app with its local OpenAI-compatible server enabled
+
+## Releasing
+
+Maintainers can follow `docs/releasing.md` for the exact workflow (version
+selection script, GitHub Actions release pipeline, npm + Homebrew publishing).
 
 ## License
 
