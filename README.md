@@ -130,9 +130,9 @@ tt setup
 
 `tt setup` and `tt model` both call the provider’s authoritative `/v1/models` endpoint so you always pick from what’s actually deployed:
 
-- **Anthropic (Claude)** &mdash; uses `https://api.anthropic.com/v1`, requires a Claude API key, and exposes every `claude-*` model returned by Anthropic.
-- **OpenAI** &mdash; uses `https://api.openai.com/v1`, requires an OpenAI API key, and lists chat-capable models (`gpt-*`, `gpt-4o`, `o1`, `omni`, etc.).
-- **LM Studio** &mdash; talks to your local OpenAI-compatible server (defaults to `http://localhost:1234/v1`) and surfaces whichever models LM Studio currently hosts; no API key required.
+- __Anthropic (Claude)__ &mdash; uses `https://api.anthropic.com/v1`, requires a Claude API key, and exposes every `claude-*` model returned by Anthropic.
+- __OpenAI__ &mdash; uses `https://api.openai.com/v1`, requires an OpenAI API key, and lists chat-capable models (`gpt-*`, `gpt-4o`, `o1`, `omni`, etc.).
+- __LM Studio__ &mdash; talks to your local OpenAI-compatible server (defaults to `http://localhost:1234/v1`) and surfaces whichever models LM Studio currently hosts; no API key required.
 
 If a `/v1/models` call fails (offline LM Studio, no network), the CLI falls back to letting you type the desired model ID manually.
 

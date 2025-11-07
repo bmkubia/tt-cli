@@ -42,8 +42,7 @@ often as needed while keeping public releases deliberate.
    - Generates git-cliff notes, stages npm tarballs, and creates the GitHub Release
    - Publishes `tt-cli` to npm (stable + `-alpha.N` tags only)
 
-Monitor <https://github.com/bmkubia/tt-cli/actions/workflows/release.yml> for status. You can
-re-run failed jobs directly from the Actions UI.
+Monitor <https://github.com/bmkubia/tt-cli/actions/workflows/release.yml> for status. You can re-run failed jobs directly from the Actions UI.
 
 ## npm publishing
 
@@ -77,8 +76,7 @@ When that does not happen fast enough, update the cask manually:
 3. Use `brew bump-cask-pr --cask tt` with the new version, URLs:
    `https://github.com/<org>/tt-cli/releases/download/tt-v<version>/tt-<target>.tar.gz`.
 
-Document any manual adjustments in the PR. When the cask merges, `brew install --cask tt`
-will deliver the notarized binaries.
+Document any manual adjustments in the PR. When the cask merges, `brew install --cask tt` will deliver the notarized binaries.
 
 ## Verification checklist
 
