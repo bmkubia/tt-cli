@@ -1,4 +1,4 @@
-# Talk-to your command line (tt-cli)
+# Talk to your command line (tt-cli)
 
 > A lightning-fast command-line tool to chat with Claude, OpenAI, or local LM Studio models directly from your terminal. Get Codex-style answers with streaming responses and beautiful Markdown rendering.
 
@@ -7,7 +7,7 @@
 
 ## Table of Contents
 
-- [Talk-to your command line (tt-cli)](#talk-to-your-command-line-tt-cli)
+- [Talk to your command line (tt-cli)](#talk-to-your-command-line-tt-cli)
   - [Table of Contents](#table-of-contents)
   - [Features](#features)
   - [Installation](#installation)
