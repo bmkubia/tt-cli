@@ -41,7 +41,7 @@ jobs:
           python3 scripts/build_npm_package.py \
             --package tt-cli \
             --version 0.0.0-ci \
-            --targets $TARGET_TRIPLE \
+            --target $TARGET_TRIPLE \
             --staging-dir dist/npm-stage \
             --vendor-src vendor \
             --pack-output dist/tt-cli-ci.tgz
