@@ -1,0 +1,56 @@
+name: npm-stage
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  stage-package:
+    runs-on: ubuntu-latest
+    env:
+      TARGET_TRIPLE: x86_64-unknown-linux-musl
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ env.TARGET_TRIPLE }}
+
+      - name: Install musl build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y musl-tools pkg-config
+
+      - name: Build release binary
+        run: cargo build --release --target $TARGET_TRIPLE --bin tt
+
+      - name: Prepare vendor tree
+        run: |
+          mkdir -p vendor/$TARGET_TRIPLE/tt
+          cp target/$TARGET_TRIPLE/release/tt vendor/$TARGET_TRIPLE/tt/tt
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Stage npm package
+        run: |
+          mkdir -p dist
+          python3 scripts/build_npm_package.py \
+            --package tt-cli \
+            --version 0.0.0-ci \
+            --targets $TARGET_TRIPLE \
+            --staging-dir dist/npm-stage \
+            --vendor-src vendor \
+            --pack-output dist/tt-cli-ci.tgz
+
+      - name: Smoke test launcher
+        run: node dist/npm-stage/bin/tt.js --version
+
+      - name: Upload staged artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-stage
+          path: dist/tt-cli-ci.tgz

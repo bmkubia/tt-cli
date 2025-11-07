@@ -1,0 +1,27 @@
+name: codespell
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  schedule:
+    - cron: "0 12 * * 1"
+
+jobs:
+  spellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install codespell
+        run: pip install codespell
+
+      - name: Run codespell
+        run: |
+          codespell \
+            --skip ".git,target,dist,vendor" \
+            --ignore-words-list "crate,tt-cli,llm" \
+            README.md \
+            docs \
+            scripts \
+            npm/tt-cli

@@ -43,6 +43,13 @@ def parse_args() -> argparse.Namespace:
         help="Version to stage for release (alias for --version).",
     )
     parser.add_argument(
+        "--target",
+        dest="targets",
+        action="append",
+        choices=tuple(TARGET_BINARIES.keys()),
+        help="Limit staging to specific target triples (default: all supported targets).",
+    )
+    parser.add_argument(
         "--staging-dir",
         type=Path,
         help="Directory to stage the package contents (defaults to a temp dir).",
@@ -66,6 +73,7 @@ def main() -> int:
     version = args.release_version or args.version
     if not version:
         raise RuntimeError("Must provide --version or --release-version.")
+    targets = args.targets or list(TARGET_BINARIES.keys())
 
     staging_dir, created_temp = prepare_staging_dir(args.staging_dir)
 
@@ -74,7 +82,7 @@ def main() -> int:
 
         if args.vendor_src is None:
             raise RuntimeError("Must provide --vendor-src when staging for release.")
-        copy_native_binaries(args.vendor_src, staging_dir)
+        copy_native_binaries(args.vendor_src, staging_dir, targets)
 
         if args.pack_output is not None:
             run_npm_pack(staging_dir, args.pack_output)
@@ -115,12 +123,13 @@ def stage_sources(package: str, staging_dir: Path, version: str) -> None:
         fh.write("\n")
 
 
-def copy_native_binaries(vendor_src: Path, staging_dir: Path) -> None:
+def copy_native_binaries(vendor_src: Path, staging_dir: Path, targets: list[str]) -> None:
     vendor_src = vendor_src.resolve()
     staging_vendor = staging_dir / VENDOR_DIR
     staging_vendor.mkdir(parents=True, exist_ok=True)
 
-    for target, binary_name in TARGET_BINARIES.items():
+    for target in targets:
+        binary_name = TARGET_BINARIES[target]
         src_path = vendor_src / target / "tt" / binary_name
         if not src_path.exists():
             raise RuntimeError(f"Missing binary for {target} at {src_path}")
