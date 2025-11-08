@@ -6,10 +6,22 @@
 [![Rust](https://img.shields.io/badge/rust-1.70%2B-orange.svg)](https://www.rust-lang.org/)
 [![npm](https://img.shields.io/badge/npm-@bmkubia/tt--cli-red.svg)](https://www.npmjs.com/package/@bmkubia/tt-cli)
 
+## Quick Start
+
+```bash
+# Install via npm
+npm install -g @bmkubia/tt-cli
+
+# Configure your provider
+tt setup
+
+# Start using it
+tt find all python files modified today
+```
+
 ## Table of Contents
 
 - [Features](#features)
-- [Quick Start](#quick-start)
 - [Installation](#installation)
 - [Configuration](#configuration)
 - [Usage](#usage)
@@ -46,19 +58,6 @@
 - Local-first option with LM Studio
 - Configuration stored securely in your home directory
 - No telemetry or data collection
-
-## Quick Start
-
-```bash
-# Install via npm
-npm install -g @bmkubia/tt-cli
-
-# Configure your provider
-tt setup
-
-# Start using it
-tt find all python files modified today
-```
 
 ## Installation
 
