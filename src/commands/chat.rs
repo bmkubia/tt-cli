@@ -82,8 +82,9 @@ async fn stop_loader(loader_handle: &mut Option<loader::LoaderHandle>) {
 
 fn build_system_prompt(model_name: &str) -> String {
     let os_name = current_os_display_name();
+    let shell_name = current_shell_display_name();
     format!(
-        "You are the command line assistant 'tt-cli' on {os_name} utilizing {model_name}. Be concise and actionable. Use terse bullets, inline `code`, and fenced blocks with language hints. Provide {os_name}-specific guidance. Skip filler."
+        "You are the command line assistant `tt-cli`. You translate natural-language requests into shell commands.\n\nEnvironment:\n- OS: {os_name}\n- Shell: {shell_name}\n- Model: {model_name}\n\nRules:\n- Output commands with minimal prose.\n- Use one command per line.\n- No placeholders. Quote paths and variables safely.\n- Prefer non-destructive forms and --dry-run/-n when available."
     )
 }
 
@@ -96,6 +97,15 @@ fn current_os_display_name() -> String {
         other => other,
     }
     .to_string()
+}
+
+fn current_shell_display_name() -> String {
+    std::env::var("SHELL")
+        .or_else(|_| std::env::var("COMSPEC"))
+        .map(|value| value.trim().to_string())
+        .ok()
+        .filter(|value| !value.is_empty())
+        .unwrap_or_else(|| "unknown".to_string())
 }
 
 fn codex_skin() -> MadSkin {
@@ -139,14 +149,14 @@ fn codex_skin() -> MadSkin {
 
 struct ResponseRenderer {
     skin: MadSkin,
-    lines_rendered: usize,
+    rendered_lines: Vec<String>,
 }
 
 impl ResponseRenderer {
     fn new() -> Self {
         Self {
             skin: codex_skin(),
-            lines_rendered: 0,
+            rendered_lines: Vec::new(),
         }
     }
 
@@ -159,12 +169,17 @@ impl ResponseRenderer {
         if !rendered.ends_with('\n') {
             rendered.push('\n');
         }
-        let line_count = rendered.matches('\n').count();
+        let new_lines: Vec<String> = rendered
+            .split_inclusive('\n')
+            .map(|line| line.to_string())
+            .collect();
+        let common_prefix = count_common_prefix(&self.rendered_lines, &new_lines);
+        let lines_to_rewrite = self.rendered_lines.len().saturating_sub(common_prefix);
 
         let mut out = stdout();
 
-        if self.lines_rendered > 0 {
-            let lines_to_move = self.lines_rendered.min(u16::MAX as usize) as u16;
+        if lines_to_rewrite > 0 {
+            let lines_to_move = lines_to_rewrite.min(u16::MAX as usize) as u16;
             execute!(
                 out,
                 cursor::MoveUp(lines_to_move),
@@ -172,20 +187,33 @@ impl ResponseRenderer {
             )?;
         }
 
-        write!(out, "{rendered}")?;
+        if common_prefix == 0 {
+            write!(out, "{rendered}")?;
+        } else {
+            for line in new_lines.iter().skip(common_prefix) {
+                write!(out, "{line}")?;
+            }
+        }
         out.flush()?;
 
-        self.lines_rendered = line_count;
+        self.rendered_lines = new_lines;
         Ok(())
     }
 
     fn finish(&mut self) {
-        self.lines_rendered = 0;
+        self.rendered_lines.clear();
     }
 
     fn has_output(&self) -> bool {
-        self.lines_rendered > 0
+        !self.rendered_lines.is_empty()
     }
+}
+
+fn count_common_prefix(a: &[String], b: &[String]) -> usize {
+    a.iter()
+        .zip(b.iter())
+        .take_while(|(left, right)| left == right)
+        .count()
 }
 
 fn print_response_header(duration: Duration, model: &str) -> Result<()> {
