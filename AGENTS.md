@@ -11,7 +11,7 @@
 - `cargo fmt` → format before every commit.
 - `cargo clippy -- -D warnings` → keep lint debt at zero.
 - `cargo test` (add targeted unit tests in the same module using `#[cfg(test)]` and `#[tokio::test(flavor = "current_thread")]` for async logic).
-- `cargo run -- <question>` to smoke-test CLI paths.
+- `cargo run -- "<question>"` to smoke-test CLI paths (quote to avoid shell globbing of `?`, `*`, etc.).
 
 ## Style & Patterns
 

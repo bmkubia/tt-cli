@@ -1,52 +1,64 @@
-# Talk to your command line (tt-cli)
+# terminal transformer – tt-cli
 
-> A lightning-fast command-line tool to chat with Claude, OpenAI, or local LM Studio models directly from your terminal. Get Codex-style answers with streaming responses and beautiful Markdown rendering.
+> Transform natural language into shell commands. A lightning fast, local-first, and highly customizable command-line tool written in Rust.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Rust](https://img.shields.io/badge/rust-1.70%2B-orange.svg)](https://www.rust-lang.org/)
+[![npm](https://img.shields.io/badge/npm-@bmkubia/tt--cli-red.svg)](https://www.npmjs.com/package/@bmkubia/tt-cli)
 
 ## Table of Contents
 
-- [Talk to your command line (tt-cli)](#talk-to-your-command-line-tt-cli)
-  - [Table of Contents](#table-of-contents)
-  - [Features](#features)
-  - [Installation](#installation)
-    - [npm (recommended)](#npm-recommended)
-    - [Homebrew (macOS)](#homebrew-macos)
-    - [Build from source](#build-from-source)
-  - [Setup](#setup)
-  - [Usage](#usage)
-    - [Ask a question](#ask-a-question)
-    - [View current configuration](#view-current-configuration)
-    - [Change model](#change-model)
-    - [Reconfigure](#reconfigure)
-    - [Check version](#check-version)
-  - [Providers \& Model Discovery](#providers--model-discovery)
-  - [Configuration](#configuration)
-  - [Project Structure](#project-structure)
-  - [Examples](#examples)
-  - [Troubleshooting](#troubleshooting)
-    - ["Please provide a question or run 'tt setup' to configure"](#please-provide-a-question-or-run-tt-setup-to-configure)
-    - [API key not working](#api-key-not-working)
-    - [LM Studio connection failed](#lm-studio-connection-failed)
-    - [Model not available](#model-not-available)
-    - [Slow responses or timeouts](#slow-responses-or-timeouts)
-  - [Requirements](#requirements)
-  - [Releasing](#releasing)
-  - [Contributing](#contributing)
-    - [Development workflow](#development-workflow)
-  - [License](#license)
+- [Features](#features)
+- [Quick Start](#quick-start)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Usage](#usage)
+- [Examples](#examples)
+- [Providers](#providers)
+- [Troubleshooting](#troubleshooting)
+- [Development](#development)
+- [Contributing](#contributing)
+- [License](#license)
 
 ## Features
 
-- **Multiple AI providers** - Works with Claude (Anthropic), OpenAI, and LM Studio (local models)
-- **Streaming responses** - See answers appear live with beautifully rendered Markdown
-- **Braille loader** - Smooth spinner with live timer (e.g., `⡿ tt is working (3s)`)
-- **Interactive setup** - Guided configuration for provider, API keys, and model selection
-- **Dynamic model discovery** - Choose from any model available via the provider's `/v1/models` endpoint
-- **Local-first option** - Run completely offline with LM Studio
-- **Lightweight & fast** - Built in Rust for speed and efficiency
-- **Cross-platform** - Works on macOS, Linux, and Windows
+### Multiple AI Providers
+
+- LM Studio – Run models locally, completely offline
+- Claude (Anthropic) – Claude-4.5 Sonnet, Haiku, 4.1 Opus
+- OpenAI – GPT-5-Codex, o3, and more
+
+### Performance
+
+- Streaming responses with live Markdown rendering
+- Built in Rust for minimal overhead
+- Efficient token usage with optimized system prompts
+
+### Developer-Focused
+
+- Shell-aware command generation
+- OS-specific guidance (macOS, Linux, Windows)
+- Automatic model discovery from provider APIs
+- Interactive setup with model selection
+
+### Privacy & Control
+
+- Local-first option with LM Studio
+- Configuration stored securely in your home directory
+- No telemetry or data collection
+
+## Quick Start
+
+```bash
+# Install via npm
+npm install -g @bmkubia/tt-cli
+
+# Configure your provider
+tt setup
+
+# Start using it
+tt find all python files modified today
+```
 
 ## Installation
 
@@ -71,28 +83,20 @@ Homebrew downloads the notarized macOS tarball from GitHub Releases.
 
 ### Build from source
 
-1. Make sure you have Rust installed. If not, install it from [rustup.rs](https://rustup.rs/)
+### From Source
 
-2. Clone this repository and navigate to it:
+Requires Rust 1.70 or later. Install from [rustup.rs](https://rustup.rs/) if needed.
 
 ```bash
+# Clone repository
 git clone https://github.com/bmkubia/tt-cli.git
 cd tt-cli
-```
 
-3. Build the release binary:
-
-```bash
-cargo build --release
-```
-
-4. Install the binary to your system:
-
-```bash
+# Build and install
 cargo install --path .
 ```
 
-This installs the `tt` binary to `~/.cargo/bin/`, which should already be in your PATH.
+The `tt` binary will be installed to `~/.cargo/bin/`.
 
 ## Setup
 
@@ -112,21 +116,95 @@ Your configuration is saved to `~/.config/tt-cli/config.json` (on macOS/Linux).
 
 ## Usage
 
-### Ask a question
+### Basic Commands
 
-Type `tt` followed by your question:
+Ask questions in natural language - `tt` translates them into shell commands:
 
 ```bash
-tt What is the capital of France?
+tt find all markdown files modified in the last 7 days
 ```
 
 ```bash
-tt How do I reverse a string in Python?
+tt recursively search for TODO comments in python files
 ```
 
 ```bash
-tt "Explain quantum computing in simple terms"
+tt show disk usage sorted by size
 ```
+
+**Note:** Quote complex queries to prevent shell glob expansion of special characters like `?`, `*`, or `[]`.
+
+## Examples
+
+### File Operations
+
+```bash
+tt find all log files older than 30 days
+tt "count lines of code in javascript files"
+tt "find duplicate files by hash"
+```
+
+### Process Management
+
+```bash
+tt "show top 10 memory-consuming processes"
+tt "kill all node processes"
+tt "find process listening on port 3000"
+```
+
+### Git Operations
+
+```bash
+tt "show git commits from last week with author names"
+tt "undo last commit but keep changes"
+tt "list all branches merged into main"
+```
+
+### Network & System
+
+```bash
+tt "check if port 8080 is in use"
+tt "show current IP address"
+tt "monitor network bandwidth usage"
+```
+
+### Text Processing
+
+```bash
+tt "extract all email addresses from a file"
+tt "find and replace text in multiple files"
+tt "count unique lines in access.log"
+```
+
+### Package Management
+
+```bash
+tt "list outdated npm packages in current directory"
+tt "remove unused docker images"
+tt "upgrade all brew packages"
+```
+
+## Providers
+
+### LM Studio
+
+- **Endpoint**: `http://localhost:1234/v1` (configurable)
+- **Authentication**: None (local)
+- **Models**: Any models you load
+
+### Anthropic (Claude)
+
+- **Endpoint**: `https://api.anthropic.com/v1`
+- **Authentication**: API key required
+- **Models**: All `claude-*` models (Opus, Sonnet, Haiku)
+
+### OpenAI
+
+- **Endpoint**: `https://api.openai.com/v1`
+- **Authentication**: API key required
+- **Models**: GPT-4o, o1, GPT-4, GPT-3.5, and newer models
+
+All providers use dynamic model discovery via their `/v1/models` endpoint, ensuring you always see current available models.
 
 ### View current configuration
 
@@ -152,14 +230,6 @@ To change providers, swap API keys, or point to a different LM Studio base URL, 
 
 ```bash
 tt setup
-```
-
-### Check version
-
-To see the current version of `tt`:
-
-```bash
-tt --version
 ```
 
 ## Providers & Model Discovery
@@ -207,23 +277,32 @@ If you use LM Studio, no API key is stored and the CLI records the custom base U
 - `src/client.rs` & `src/models.rs` — provider integrations (streaming completions + `/v1/models` discovery).
 - `src/config.rs`, `src/loader.rs`, `src/version.rs` — persisted settings, spinner UX, and semantic version metadata.
 
-## Examples
+## Command Examples
 
 ```bash
-# Simple question
-tt What is Rust?
+# File operations
+tt find all log files older than 30 days
 
-# Code-related question
-tt How do I read a file in Python?
+# Process management
+tt "show top 10 memory-consuming processes"
 
-# Multi-word questions (quotes optional but recommended for complex queries)
-tt "What are the best practices for REST API design?"
+# Git operations
+tt "show git commits from last week with author names"
 
-# Ask about debugging
-tt "How do I debug a segmentation fault in C++?"
+# Network diagnostics
+tt "check if port 8080 is in use"
 
-# Request code examples
-tt "Show me how to implement a binary search in JavaScript"
+# Disk and filesystem
+tt "find directories taking more than 1GB"
+
+# Text processing
+tt "extract all email addresses from a file"
+
+# System information
+tt show current shell and version
+
+# Package management
+tt "list outdated npm packages in current directory"
 
 # View configuration
 tt config
@@ -240,62 +319,79 @@ tt --version
 
 ## Troubleshooting
 
-### "Please provide a question or run 'tt setup' to configure"
+### Configuration Issues
 
-This means you haven't configured `tt` yet. Run `tt setup` to select a provider and model.
+#### "Please provide a question or run 'tt setup' to configure"
 
-### API key not working
+You haven't configured `tt` yet. Run `tt setup` to select a provider and model.
 
-- For Anthropic/OpenAI: Verify your API key is valid at their respective dashboards
-- Check that your key has the correct permissions and billing is set up
-- Run `tt setup` again to re-enter your credentials
+#### API key not working
 
-### LM Studio connection failed
+- Verify your API key at your provider's dashboard (Anthropic Console, OpenAI Platform)
+- Ensure billing is configured and your account is in good standing
+- Check that the key has appropriate permissions
+- Re-run `tt setup` to enter a new key
 
-- Ensure LM Studio is running and the server is enabled (Server tab → Start Server)
-- Verify the server is listening on `http://localhost:1234` (or your custom port)
-- Check that you have a model loaded in LM Studio
+### Provider-Specific Issues
+
+#### LM Studio connection failed
+
+- Verify LM Studio is running and the server is enabled (Server tab → Start Server)
+- Confirm the server is listening on `http://localhost:1234` (default port)
+- Ensure you have a model loaded in LM Studio
 - If using a custom port, run `tt setup` and enter the correct base URL (e.g., `http://localhost:8080/v1`)
 
-### Model not available
+#### Model not available
 
-- Run `tt model` to see the current list of available models from your provider
-- For LM Studio, ensure you have at least one model downloaded and loaded
-- For Anthropic/OpenAI, check your account has access to the model you're trying to use
+- Run `tt model` to see current available models from your provider
+- For LM Studio: Download and load at least one model
+- For Anthropic/OpenAI: Verify your account has access to the requested model
 
-### Slow responses or timeouts
+#### Slow responses or timeouts
 
-- Check your internet connection (for Anthropic/OpenAI)
-- For LM Studio, verify your local machine has sufficient resources (CPU/GPU/RAM)
+- Check your internet connection (cloud providers)
+- For LM Studio: Verify sufficient system resources (CPU/GPU/RAM)
 - Try a smaller/faster model with `tt model`
+- Check provider status pages for outages
 
-## Requirements
+### Shell Issues
 
-- Rust 1.70+ (for building)
-- A provider credential: Anthropic API key, OpenAI API key, or the LM Studio desktop app with its local OpenAI-compatible server enabled
+#### Shell glob pattern errors ("no matches found")
 
-## Releasing
-
-Maintainers can follow `docs/releasing.md` for the exact workflow (version
-selection script, GitHub Actions release pipeline, npm + Homebrew publishing).
-
-## Contributing
-
-Contributions are welcome but please follow these guidelines:
-
-1. **Code Style**: Run `cargo fmt` before committing
-2. **Linting**: Ensure `cargo clippy -- -D warnings` passes with no warnings
-3. **Tests**: Add tests for new features and run `cargo test`
-4. **Commits**: Use [Conventional Commits](https://www.conventionalcommits.org/) format (e.g., `feat: add model caching`, `fix: handle offline mode`)
-
-### Development workflow
+Shells like zsh treat `?`, `*`, or `[]` as glob patterns. Always quote your questions:
 
 ```bash
-# Clone and setup
+# ✅ Correct
+tt "can you find all files larger than 100MB?"
+
+# ❌ Wrong - shell will try to expand the * pattern
+tt can you find all files larger than 100MB?
+```
+
+## Development
+
+### Architecture
+
+```text
+src/
+├── app.rs          # CLI entrypoint and argument parsing
+├── commands/       # Command implementations (chat, setup, model, config)
+├── client.rs       # Provider API clients and streaming
+├── models.rs       # Model discovery and listing
+├── config.rs       # Configuration persistence
+├── interaction.rs  # Interactive prompts
+├── loader.rs       # Spinner/progress UI
+└── version.rs      # Version metadata
+```
+
+### Local Development
+
+```bash
+# Clone repository
 git clone https://github.com/bmkubia/tt-cli.git
 cd tt-cli
 
-# Build and run locally
+# Build and run
 cargo build
 cargo run -- "your test question"
 
@@ -310,6 +406,30 @@ cargo clippy -- -D warnings
 cargo build --release
 ```
 
+### Requirements
+
+- Rust 1.70 or later
+- One of: Anthropic API key, OpenAI API key, or LM Studio with local server
+
+## Contributing
+
+Please ensure your changes adhere to the following guidelines:
+
+### Code Standards
+
+- **Formatting**: Run `cargo fmt` before committing
+- **Linting**: Ensure `cargo clippy -- -D warnings` passes
+- **Testing**: Add tests for new features (`cargo test`)
+- **Commits**: Follow [Conventional Commits](https://www.conventionalcommits.org/)
+  - `feat:` for new features
+  - `fix:` for bug fixes
+  - `docs:` for documentation changes
+  - `refactor:` for code refactoring
+
+### Release Process
+
+See `docs/releasing.md` for the release workflow, including version management, GitHub Actions pipeline, and npm/Homebrew publishing.
+
 ## License
 
-MIT
+MIT License - see [LICENSE](LICENSE) file for details.
