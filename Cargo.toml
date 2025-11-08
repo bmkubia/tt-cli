@@ -16,3 +16,8 @@ futures = "0.3"
 tokio-stream = "0.1"
 crossterm = "0.29"
 termimad = "0.32"
+
+[dev-dependencies]
+assert_cmd = "2.0"
+predicates = "3.1"
+tempfile = "3.10"

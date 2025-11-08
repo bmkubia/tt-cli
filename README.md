@@ -277,6 +277,8 @@ If you use LM Studio, no API key is stored and the CLI records the custom base U
 }
 ```
 
+> Need to sandbox config (CI/tests)? Set `TT_CONFIG_DIR=/tmp/tt-cli-test` (or any directory) to override the path used above.
+
 ## Project Structure
 
 - `src/app.rs` — CLI entrypoint; parses args and dispatches to command handlers.
@@ -417,7 +419,7 @@ cargo build --release
 ### Requirements
 
 - Rust 1.70 or later
-- One of: Anthropic API key, OpenAI API key, or LM Studio with local server
+- One of: Anthropic API key, OpenAI API key, OpenRouter API key, or LM Studio with local server
 
 ## Contributing
 

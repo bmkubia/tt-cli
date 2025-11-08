@@ -67,7 +67,7 @@ async fn fetch_anthropic_models(api_key: &str, api_base: &str) -> Result<Vec<Str
         .await
         .context("Failed to parse Anthropic model response")?;
 
-    Ok(clean_models(
+    Ok(normalize_models(
         payload.data.into_iter().map(|entry| entry.id).collect(),
         ProviderKind::Anthropic,
     ))
@@ -99,15 +99,15 @@ async fn fetch_openai_style_models(
         .await
         .context("Failed to parse OpenAI-compatible model response")?;
 
-    Ok(clean_models(
+    Ok(normalize_models(
         payload.data.into_iter().map(|entry| entry.id).collect(),
         provider,
     ))
 }
 
-fn clean_models(mut models: Vec<String>, provider: ProviderKind) -> Vec<String> {
-    if provider == ProviderKind::OpenAi {
-        models.retain(|id| looks_like_chat_model(id));
+pub fn normalize_models(mut models: Vec<String>, provider: ProviderKind) -> Vec<String> {
+    if matches!(provider, ProviderKind::OpenAi) {
+        models.retain(|id| is_chat_model_id(id));
     }
 
     models.sort();
@@ -115,7 +115,7 @@ fn clean_models(mut models: Vec<String>, provider: ProviderKind) -> Vec<String> 
     models
 }
 
-fn looks_like_chat_model(id: &str) -> bool {
+fn is_chat_model_id(id: &str) -> bool {
     let id = id.to_ascii_lowercase();
     id.contains("gpt") || id.starts_with("o1") || id.starts_with("o3") || id.contains("omni")
 }

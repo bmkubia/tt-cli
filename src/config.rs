@@ -2,6 +2,7 @@ use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
+use std::{env, path::Path};
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
 #[serde(rename_all = "snake_case")]
@@ -71,6 +72,15 @@ impl Default for Config {
 
 impl Config {
     pub fn config_dir() -> Result<PathBuf> {
+        if let Ok(custom) = env::var("TT_CONFIG_DIR") {
+            let custom_path = Path::new(&custom);
+            if custom_path.as_os_str().is_empty() {
+                anyhow::bail!("TT_CONFIG_DIR cannot be empty");
+            }
+            fs::create_dir_all(custom_path).context("Could not create TT_CONFIG_DIR")?;
+            return Ok(custom_path.to_path_buf());
+        }
+
         let config_dir = dirs::config_dir().context("Could not find config directory")?;
         let app_config_dir = config_dir.join(APP_CONFIG_DIR);
         fs::create_dir_all(&app_config_dir).context("Could not create config directory")?;

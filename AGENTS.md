@@ -12,6 +12,8 @@
 - `cargo clippy -- -D warnings` → keep lint debt at zero.
 - `cargo test` (add targeted unit tests in the same module using `#[cfg(test)]` and `#[tokio::test(flavor = "current_thread")]` for async logic).
 - `cargo run -- "<question>"` to smoke-test CLI paths (quote to avoid shell globbing of `?`, `*`, etc.).
+- `.github/workflows/ci.yml` mirrors this loop (fmt + clippy + test) on every push/PR—keep it green.
+- When exercising the binary in tests/CI, set `TT_CONFIG_DIR` to a temp directory so you don't pollute your real `~/.config/tt-cli`.
 
 ## Style & Patterns
 
