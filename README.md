@@ -36,9 +36,9 @@ tt "find all python files modified today"
 
 ### Multiple AI Providers
 
-- LM Studio – Run models locally, completely offline
-- Claude (Anthropic) – Claude-4.5 Sonnet, Haiku, 4.1 Opus
-- OpenAI – GPT-4o, o1, GPT-4, GPT-3.5, and more
+- LM Studio – Run thousands of models locally, completely offline
+- Claude (Anthropic) – Claude 4.5 Sonnet, 4.5 Haiku, 4.1 Opus, and more
+- OpenAI – GPT-5-Codex, GPT-5, GPT-4o, o3, and more
 - OpenRouter – Access 200+ models (Anthropic, OpenAI, Mistral, DeepSeek, Llama, etc.) through a single API
 
 ### Performance
@@ -202,7 +202,7 @@ tt "upgrade all brew packages"
 
 - **Endpoint**: `https://api.openai.com/v1`
 - **Authentication**: API key required
-- **Models**: GPT-4o, o1, GPT-4, GPT-3.5, and newer models
+- **Models**: GPT-5-Codex, GPT-5, o3, and newer models
 
 ### OpenRouter
 

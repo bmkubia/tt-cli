@@ -1,5 +1,5 @@
 use crate::config::ProviderKind;
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result, anyhow};
 use reqwest::Client;
 use serde::Deserialize;
 

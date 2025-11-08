@@ -1,5 +1,5 @@
 use crossterm::{cursor, execute};
-use std::io::{stdout, Write};
+use std::io::{Write, stdout};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::Notify;

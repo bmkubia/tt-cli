@@ -1,6 +1,6 @@
 use crate::config::ProviderKind;
-use anyhow::{anyhow, Context, Result};
-use futures::{stream, Stream, StreamExt};
+use anyhow::{Context, Result, anyhow};
+use futures::{Stream, StreamExt, stream};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -331,7 +331,7 @@ fn parse_openai_payload(payload: &str) -> Option<Result<String>> {
         Err(err) => {
             return Some(Err(anyhow!(
                 "Failed to parse OpenAI-compatible event: {err} ({payload})"
-            )))
+            )));
         }
     };
 

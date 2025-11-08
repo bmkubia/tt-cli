@@ -6,7 +6,7 @@ use crossterm::{
     terminal,
 };
 use futures::StreamExt;
-use std::io::{stdout, Write};
+use std::io::{Write, stdout};
 use std::time::{Duration, Instant};
 use termimad::{Alignment, ListItemsIndentationMode, MadSkin};
 

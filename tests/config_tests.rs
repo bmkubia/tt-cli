@@ -42,8 +42,12 @@ fn api_base_uses_override_when_present() {
 #[test]
 fn config_dir_respects_tt_config_dir_env() {
     let temp = TempDir::new().unwrap();
-    std::env::set_var("TT_CONFIG_DIR", temp.path());
+    unsafe {
+        std::env::set_var("TT_CONFIG_DIR", temp.path());
+    }
     let path = Config::config_dir().expect("config dir");
     assert_eq!(path, temp.path());
-    std::env::remove_var("TT_CONFIG_DIR");
+    unsafe {
+        std::env::remove_var("TT_CONFIG_DIR");
+    }
 }
