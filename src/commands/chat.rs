@@ -24,7 +24,7 @@ pub async fn run(question: &str) -> Result<()> {
     let start_time = Instant::now();
     let mut header_printed = false;
     let mut renderer = ResponseRenderer::new();
-    let system_prompt = build_system_prompt();
+    let system_prompt = build_system_prompt(&config.default_model);
 
     let mut stream = client
         .ask_stream(question, &config.default_model, &system_prompt)
@@ -40,7 +40,7 @@ pub async fn run(question: &str) -> Result<()> {
 
                 if !header_printed {
                     stop_loader(&mut loader_handle).await;
-                    print_response_header(start_time.elapsed())
+                    print_response_header(start_time.elapsed(), &config.default_model)
                         .context("Failed to write response header")?;
                     header_printed = true;
                 }
@@ -80,15 +80,10 @@ async fn stop_loader(loader_handle: &mut Option<loader::LoaderHandle>) {
     }
 }
 
-fn build_system_prompt() -> String {
+fn build_system_prompt(model_name: &str) -> String {
     let os_name = current_os_display_name();
     format!(
-        "You are Claude integrated into the tt Codex-style CLI on {os_name}. \
-Response requirements:\n\
-- Be fast, token-efficient, and focused on actionable command-line answers unless the user explicitly opts out.\n\
-- Follow Codex CLI formatting: prefer terse '-' bullets or single lines; avoid titles/headings unless explicitly requested; use inline code/backticks for commands and fenced code blocks (with language hints) for multi-line snippets.\n\
-- Provide OS-aware guidance reflecting {os_name}. Mention alternatives only when critical.\n\
-- Skip filler and keep context minimal. Ask clarifying questions only when essential."
+        "You are the command line assistant 'tt-cli' on {os_name} utilizing {model_name}. Be concise and actionable. Use terse bullets, inline `code`, and fenced blocks with language hints. Provide {os_name}-specific guidance. Skip filler."
     )
 }
 
@@ -193,14 +188,27 @@ impl ResponseRenderer {
     }
 }
 
-fn print_response_header(duration: Duration) -> Result<()> {
+fn print_response_header(duration: Duration, model: &str) -> Result<()> {
     let (width, _) = terminal::size().unwrap_or((100, 0));
     let label = format!("Thought for {}", loader::format_elapsed(duration));
-    let mut line = format!("─ {label} ");
+    let model_label = format!(" {model} ");
+
     let desired_width = width.max(20) as usize;
-    let current_len = line.chars().count();
-    if desired_width > current_len {
-        line.push_str(&"─".repeat(desired_width - current_len));
+    let left_part = format!("─ {label} ");
+    let left_len = left_part.chars().count();
+    let model_len = model_label.chars().count();
+
+    let mut line = left_part;
+    let separator_len = desired_width.saturating_sub(left_len + model_len + 1);
+    if separator_len > 0 {
+        line.push_str(&"─".repeat(separator_len));
+        line.push_str(&model_label);
+        line.push('─');
+    } else {
+        let remaining = desired_width.saturating_sub(left_len);
+        if remaining > 0 {
+            line.push_str(&"─".repeat(remaining));
+        }
     }
 
     const CODE_COLOR: &str = "\x1b[90m";
