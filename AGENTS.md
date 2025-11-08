@@ -1,10 +1,10 @@
-# Repository Guidelines
+# tt-cli – rust cli for quick terminal tasks
 
 ## Layout
 
 - `src/app.rs` owns CLI parsing and delegates to `src/commands/`.
 - `src/commands/` contains focused handlers (`chat`, `setup`, `model`, `config`, `version`) and shares prompt logic via `src/interaction.rs`.
-- `src/client.rs` streams completions for Anthropic/OpenAI/LM Studio, `src/models.rs` discovers `/v1/models`, `src/config.rs` persists provider settings, and `src/loader.rs` + `src/version.rs` cover UX + release metadata.
+- `src/client.rs` streams completions for Anthropic/OpenAI/OpenRouter/LM Studio (remote providers share OpenAI-style APIs, with OpenRouter adding referer/title headers), `src/models.rs` discovers `/v1/models`, `src/config.rs` persists provider settings, and `src/loader.rs` + `src/version.rs` cover UX + release metadata.
 
 ## Dev Loop
 

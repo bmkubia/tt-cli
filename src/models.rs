@@ -38,6 +38,11 @@ pub async fn fetch_available_models(
             let key = api_key.ok_or_else(|| anyhow!("OpenAI API key required to list models"))?;
             fetch_openai_style_models(Some(key), api_base, provider).await
         }
+        ProviderKind::OpenRouter => {
+            let key =
+                api_key.ok_or_else(|| anyhow!("OpenRouter API key required to list models"))?;
+            fetch_openai_style_models(Some(key), api_base, provider).await
+        }
         ProviderKind::LmStudio => fetch_openai_style_models(None, api_base, provider).await,
     }
 }

@@ -9,6 +9,7 @@ pub enum ProviderKind {
     #[default]
     Anthropic,
     OpenAi,
+    OpenRouter,
     LmStudio,
 }
 
@@ -17,18 +18,23 @@ impl ProviderKind {
         match self {
             ProviderKind::Anthropic => "Anthropic (Claude)",
             ProviderKind::OpenAi => "OpenAI",
+            ProviderKind::OpenRouter => "OpenRouter",
             ProviderKind::LmStudio => "LM Studio (local)",
         }
     }
 
     pub fn requires_api_key(&self) -> bool {
-        matches!(self, ProviderKind::Anthropic | ProviderKind::OpenAi)
+        matches!(
+            self,
+            ProviderKind::Anthropic | ProviderKind::OpenAi | ProviderKind::OpenRouter
+        )
     }
 
     pub fn default_api_base(&self) -> &'static str {
         match self {
             ProviderKind::Anthropic => "https://api.anthropic.com/v1",
             ProviderKind::OpenAi => "https://api.openai.com/v1",
+            ProviderKind::OpenRouter => "https://openrouter.ai/api/v1",
             ProviderKind::LmStudio => "http://localhost:1234/v1",
         }
     }

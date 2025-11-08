@@ -8,6 +8,9 @@ use std::pin::Pin;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
+const OPENROUTER_REFERRER: &str = "https://github.com/bmkubia/tt-cli";
+const OPENROUTER_TITLE: &str = "tt-cli";
+
 #[derive(Debug, Serialize)]
 struct AnthropicMessage {
     role: String,
@@ -126,7 +129,7 @@ impl ModelClient {
                 self.send_anthropic_request(question, model, system_prompt)
                     .await?
             }
-            ProviderKind::OpenAi | ProviderKind::LmStudio => {
+            ProviderKind::OpenAi | ProviderKind::OpenRouter | ProviderKind::LmStudio => {
                 self.send_openai_request(question, model, system_prompt)
                     .await?
             }
@@ -223,6 +226,11 @@ impl ModelClient {
                 anyhow!("No API key configured for {}", self.provider.display_name())
             })?;
             builder = builder.bearer_auth(api_key);
+            if self.provider == ProviderKind::OpenRouter {
+                builder = builder
+                    .header("HTTP-Referer", OPENROUTER_REFERRER)
+                    .header("X-Title", OPENROUTER_TITLE);
+            }
         }
 
         builder
@@ -297,7 +305,7 @@ fn drain_sse_events(buffer: &mut String, provider: ProviderKind) -> Vec<Result<S
                         events.push(Err(anyhow!("Failed to parse event: {err} ({payload})")))
                     }
                 },
-                ProviderKind::OpenAi | ProviderKind::LmStudio => {
+                ProviderKind::OpenAi | ProviderKind::OpenRouter | ProviderKind::LmStudio => {
                     if let Some(result) = parse_openai_payload(payload) {
                         events.push(result);
                     }

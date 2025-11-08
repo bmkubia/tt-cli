@@ -16,7 +16,7 @@ npm install -g @bmkubia/tt-cli
 tt setup
 
 # Start using it
-tt find all python files modified today
+tt "find all python files modified today"
 ```
 
 ## Table of Contents
@@ -38,7 +38,8 @@ tt find all python files modified today
 
 - LM Studio – Run models locally, completely offline
 - Claude (Anthropic) – Claude-4.5 Sonnet, Haiku, 4.1 Opus
-- OpenAI – GPT-5-Codex, o3, and more
+- OpenAI – GPT-4o, o1, GPT-4, GPT-3.5, and more
+- OpenRouter – Access 200+ models (Anthropic, OpenAI, Mistral, DeepSeek, Llama, etc.) through a single API
 
 ### Performance
 
@@ -107,8 +108,8 @@ tt setup
 
 Setup walks you through:
 
-1. Selecting a provider (Anthropic/Claude, OpenAI, or LM Studio via its OpenAI-compatible server)
-2. Supplying the required credential: an API key for Anthropic/OpenAI or the LM Studio base URL (defaults to `http://localhost:1234/v1`)
+1. Selecting a provider (Anthropic/Claude, OpenAI, OpenRouter, or LM Studio via its OpenAI-compatible server)
+2. Supplying the required credential: an API key for Anthropic / OpenAI / OpenRouter, or the LM Studio base URL (defaults to `http://localhost:1234/v1`)
 3. Picking a default model from the provider’s live `/v1/models` response (with a manual entry fallback when offline)
 
 Your configuration is saved to `~/.config/tt-cli/config.json` (on macOS/Linux).
@@ -120,15 +121,15 @@ Your configuration is saved to `~/.config/tt-cli/config.json` (on macOS/Linux).
 Ask questions in natural language - `tt` translates them into shell commands:
 
 ```bash
-tt find all markdown files modified in the last 7 days
+tt "find all markdown files modified in the last 7 days"
 ```
 
 ```bash
-tt recursively search for TODO comments in python files
+tt "recursively search for TODO comments in python files"
 ```
 
 ```bash
-tt show disk usage sorted by size
+tt "show disk usage sorted by size"
 ```
 
 **Note:** Quote complex queries to prevent shell glob expansion of special characters like `?`, `*`, or `[]`.
@@ -203,6 +204,13 @@ tt "upgrade all brew packages"
 - **Authentication**: API key required
 - **Models**: GPT-4o, o1, GPT-4, GPT-3.5, and newer models
 
+### OpenRouter
+
+- **Endpoint**: `https://openrouter.ai/api/v1`
+- **Authentication**: API key required
+- **Models**: 200+ models (Anthropic, OpenAI, Mistral, DeepSeek, Llama, etc.) depending on your OpenRouter plan
+- **Notes**: `tt-cli` automatically sets the required `HTTP-Referer` and `X-Title` headers (pointing to this project), so you only need to provide the API key.
+
 All providers use dynamic model discovery via their `/v1/models` endpoint, ensuring you always see current available models.
 
 ### View current configuration
@@ -237,6 +245,7 @@ tt setup
 
 - **Anthropic (Claude)** &mdash; uses `https://api.anthropic.com/v1`, requires a Claude API key, and exposes every `claude-*` model returned by Anthropic.
 - **OpenAI** &mdash; uses `https://api.openai.com/v1`, requires an OpenAI API key, and lists chat-capable models (`gpt-*`, `gpt-4o`, `o1`, `omni`, etc.).
+- **OpenRouter** &mdash; uses `https://openrouter.ai/api/v1`, requires an OpenRouter API key, and surfaces every model your OpenRouter account can access (Anthropic, OpenAI, Mistral, DeepSeek, Llama, etc.).
 - **LM Studio** &mdash; talks to your local OpenAI-compatible server (defaults to `http://localhost:1234/v1`) and surfaces whichever models LM Studio currently hosts; no API key required.
 
 If a `/v1/models` call fails (offline LM Studio, no network), the CLI falls back to letting you type the desired model ID manually.

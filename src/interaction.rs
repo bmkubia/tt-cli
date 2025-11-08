@@ -7,6 +7,7 @@ pub fn select_provider(current: ProviderKind) -> Result<ProviderKind> {
     let providers = [
         ProviderKind::Anthropic,
         ProviderKind::OpenAi,
+        ProviderKind::OpenRouter,
         ProviderKind::LmStudio,
     ];
 
