@@ -218,7 +218,7 @@ fn count_common_prefix(a: &[String], b: &[String]) -> usize {
 
 fn print_response_header(duration: Duration, model: &str) -> Result<()> {
     let (width, _) = terminal::size().unwrap_or((100, 0));
-    let label = format!("Thought for {}", loader::format_elapsed(duration));
+    let label = format!("Worked for {}", loader::format_elapsed(duration));
     let model_label = format!(" {model} ");
 
     let desired_width = width.max(20) as usize;

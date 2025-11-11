@@ -1,3 +1,5 @@
+#![cfg_attr(coverage, allow(unexpected_cfgs))]
+
 pub mod app;
 pub mod client;
 pub mod commands;
