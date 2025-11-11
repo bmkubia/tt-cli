@@ -110,9 +110,13 @@ Setup walks you through:
 
 1. Selecting a provider (Anthropic/Claude, OpenAI, OpenRouter, or LM Studio via its OpenAI-compatible server)
 2. Supplying the required credential: an API key for Anthropic / OpenAI / OpenRouter, or the LM Studio base URL (defaults to `http://localhost:1234/v1`)
-3. Picking a default model from the provider’s live `/v1/models` response (with a manual entry fallback when offline)
+3. Picking a default model from the provider's live `/v1/models` response (with a manual entry fallback when offline)
 
-Your configuration is saved to `~/.config/tt-cli/config.json` (on macOS/Linux).
+Configuration is saved to:
+
+- **macOS**: `~/Library/Application\ Support/tt-cli/config.json`
+- **Linux**: `~/.config/tt-cli/config.json`
+- **Windows**: `%APPDATA%\tt-cli\config.json`
 
 ## Usage
 
@@ -254,8 +258,9 @@ If a `/v1/models` call fails (offline LM Studio, no network), the CLI falls back
 
 The configuration file is stored at:
 
-- macOS/Linux: `~/.config/tt-cli/config.json`
-- Windows: `%APPDATA%\tt-cli\config.json`
+- **macOS**: `~/Library/Application\ Support/tt-cli/config.json`
+- **Linux**: `~/.config/tt-cli/config.json`
+- **Windows**: `%APPDATA%\tt-cli\config.json`
 
 It records the current provider, default model, and any credentials. Example Anthropic config:
 
