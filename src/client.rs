@@ -157,14 +157,14 @@ impl ModelClient {
             anyhow::bail!("API request failed with status {}: {}", status, error_text);
         }
 
-        let buffer = Arc::new(Mutex::new(String::new()));
+        let decoder = Arc::new(Mutex::new(SseDecoder::default()));
         let provider = self.provider;
 
         let event_stream = response
             .bytes_stream()
             .then(move |chunk_result| {
-                let buffer = Arc::clone(&buffer);
-                async move { process_chunk(chunk_result, buffer, provider).await }
+                let decoder = Arc::clone(&decoder);
+                async move { process_chunk(chunk_result, decoder, provider).await }
             })
             .flat_map(stream::iter);
 
@@ -256,9 +256,78 @@ impl ModelClient {
 }
 
 #[cfg(not(coverage))]
+#[derive(Default)]
+struct SseDecoder {
+    buffer: String,
+}
+
+#[cfg(not(coverage))]
+struct SseEvent {
+    event: Option<String>,
+    data: String,
+}
+
+#[cfg(not(coverage))]
+impl SseDecoder {
+    fn ingest(&mut self, chunk: &str) -> Vec<SseEvent> {
+        let normalized = chunk.replace("\r\n", "\n");
+        self.buffer.push_str(&normalized);
+
+        let mut events = Vec::new();
+        while let Some(index) = self.buffer.find("\n\n") {
+            let mut block = self.buffer[..index].to_string();
+            self.buffer.drain(..index + 2);
+
+            block = block.trim_matches('\n').to_string();
+            if block.trim().is_empty() {
+                continue;
+            }
+
+            if let Some(event) = Self::parse_block(&block) {
+                events.push(event);
+            }
+        }
+
+        events
+    }
+
+    fn parse_block(block: &str) -> Option<SseEvent> {
+        let mut event = None;
+        let mut data_lines = Vec::new();
+
+        for line in block.lines() {
+            if line.is_empty() || line.starts_with(':') {
+                continue;
+            }
+
+            let (field, value) = if let Some((key, rest)) = line.split_once(':') {
+                (key.trim(), rest.trim_start())
+            } else {
+                (line.trim(), "")
+            };
+
+            match field {
+                "event" if !value.is_empty() => event = Some(value.to_string()),
+                "data" => data_lines.push(value.to_string()),
+                _ => {}
+            }
+        }
+
+        if event.is_none() && data_lines.is_empty() {
+            return None;
+        }
+
+        Some(SseEvent {
+            event,
+            data: data_lines.join("\n"),
+        })
+    }
+}
+
+#[cfg(not(coverage))]
 async fn process_chunk<B>(
     chunk_result: Result<B, reqwest::Error>,
-    buffer: Arc<Mutex<String>>,
+    decoder: Arc<Mutex<SseDecoder>>,
     provider: ProviderKind,
 ) -> Vec<Result<String>>
 where
@@ -269,14 +338,15 @@ where
     match chunk_result {
         Ok(chunk) => match std::str::from_utf8(chunk.as_ref()) {
             Ok(text) => {
-                let normalized = text.replace("\r\n", "\n");
-                let mut guard = buffer.lock().await;
-                guard.push_str(&normalized);
-                results.extend(drain_sse_events(&mut guard, provider));
+                let mut guard = decoder.lock().await;
+                let events = guard.ingest(text);
+                for event in events {
+                    if let Some(result) = interpret_sse_event(provider, event) {
+                        results.push(result);
+                    }
+                }
             }
-            Err(err) => {
-                results.push(Err(anyhow!("Failed to parse chunk as UTF-8: {err}")));
-            }
+            Err(err) => results.push(Err(anyhow!("Failed to parse chunk as UTF-8: {err}"))),
         },
         Err(err) => results.push(Err(err.into())),
     }
@@ -285,53 +355,25 @@ where
 }
 
 #[cfg(not(coverage))]
-fn drain_sse_events(buffer: &mut String, provider: ProviderKind) -> Vec<Result<String>> {
-    let mut events = Vec::new();
-
-    loop {
-        let Some(index) = buffer.find("\n\n") else {
-            break;
-        };
-
-        let raw_chunk = buffer[..index].to_string();
-        buffer.drain(..index + 2);
-        let trimmed = raw_chunk.trim();
-
-        if trimmed.is_empty() {
-            continue;
-        }
-
-        for line in trimmed.lines() {
-            let Some(payload) = line.strip_prefix("data:") else {
-                continue;
-            };
-            let payload = payload.trim_start();
-
-            if payload == "[DONE]" {
-                continue;
-            }
-
-            match provider {
-                ProviderKind::Anthropic => match serde_json::from_str::<StreamEvent>(payload) {
-                    Ok(event) => {
-                        if let Some(result) = event_to_result(event) {
-                            events.push(result);
-                        }
-                    }
-                    Err(err) => {
-                        events.push(Err(anyhow!("Failed to parse event: {err} ({payload})")))
-                    }
-                },
-                ProviderKind::OpenAi | ProviderKind::OpenRouter | ProviderKind::LmStudio => {
-                    if let Some(result) = parse_openai_payload(payload) {
-                        events.push(result);
-                    }
-                }
-            }
-        }
+fn interpret_sse_event(provider: ProviderKind, event: SseEvent) -> Option<Result<String>> {
+    if matches!(event.event.as_deref(), Some("ping")) {
+        return None;
     }
 
-    events
+    let payload = event.data.trim();
+    if payload.is_empty() || payload == "[DONE]" {
+        return None;
+    }
+
+    match provider {
+        ProviderKind::Anthropic => match serde_json::from_str::<StreamEvent>(payload) {
+            Ok(decoded) => event_to_result(decoded),
+            Err(err) => Some(Err(anyhow!("Failed to parse event: {err} ({payload})"))),
+        },
+        ProviderKind::OpenAi | ProviderKind::OpenRouter | ProviderKind::LmStudio => {
+            parse_openai_payload(payload)
+        }
+    }
 }
 
 #[cfg(not(coverage))]
@@ -414,4 +456,63 @@ fn extract_openai_text(value: &Value) -> Option<String> {
     }
 
     None
+}
+
+#[cfg(all(test, not(coverage)))]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn sse_decoder_handles_split_chunks_and_multiline_data() {
+        let mut decoder = SseDecoder::default();
+        assert!(decoder.ingest("data: first chunk").is_empty());
+
+        let events = decoder.ingest(" continues\n\n");
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].data, "first chunk continues");
+
+        let multi = "event: message\n\
+                     data: line one\n\
+                     data: line two\n\
+\n";
+        let events = decoder.ingest(multi);
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].event.as_deref(), Some("message"));
+        assert_eq!(events[0].data, "line one\nline two");
+    }
+
+    #[test]
+    fn interpret_skips_ping_and_done_events() {
+        let ping = SseEvent {
+            event: Some("ping".into()),
+            data: String::new(),
+        };
+        assert!(interpret_sse_event(ProviderKind::Anthropic, ping).is_none());
+
+        let done = SseEvent {
+            event: None,
+            data: "[DONE]".into(),
+        };
+        assert!(interpret_sse_event(ProviderKind::OpenAi, done).is_none());
+    }
+
+    #[test]
+    fn interpret_emits_openai_and_anthropic_payloads() {
+        let openai_event = SseEvent {
+            event: None,
+            data: r#"{"choices":[{"delta":{"content":"hi"}}]}"#.into(),
+        };
+        let result =
+            interpret_sse_event(ProviderKind::OpenAi, openai_event).expect("openai event success");
+        assert_eq!(result.unwrap(), "hi");
+
+        let anthropic_event = SseEvent {
+            event: None,
+            data: r#"{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"ok"}}"#
+                .into(),
+        };
+        let result =
+            interpret_sse_event(ProviderKind::Anthropic, anthropic_event).expect("anthropic delta");
+        assert_eq!(result.unwrap(), "ok");
+    }
 }

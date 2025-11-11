@@ -1,8 +1,10 @@
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, anyhow};
 use serde::{Deserialize, Serialize};
 use std::fs;
+use std::io::Write;
 use std::path::PathBuf;
 use std::{env, path::Path};
+use tempfile::Builder;
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
 #[serde(rename_all = "snake_case")]
@@ -108,7 +110,28 @@ impl Config {
     pub fn save(&self) -> Result<()> {
         let config_path = Self::config_path()?;
         let contents = serde_json::to_string_pretty(self).context("Could not serialize config")?;
-        fs::write(&config_path, contents).context("Could not write config file")?;
+        let dir = config_path
+            .parent()
+            .context("Config path is missing a parent directory")?;
+        fs::create_dir_all(dir).context("Could not ensure config directory exists")?;
+
+        let mut temp_file = Builder::new()
+            .prefix("config")
+            .suffix(".tmp")
+            .tempfile_in(dir)
+            .context("Failed to create temporary config file")?;
+
+        temp_file
+            .write_all(contents.as_bytes())
+            .context("Failed to write temporary config file")?;
+        temp_file
+            .flush()
+            .context("Failed to flush temporary config file")?;
+
+        temp_file
+            .persist(&config_path)
+            .map_err(|err| anyhow!("Failed to persist config file: {}", err))?;
+
         Ok(())
     }
 
