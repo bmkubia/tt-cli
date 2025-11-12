@@ -25,6 +25,7 @@ tokio-stream = "0.1"
 crossterm = "0.29"
 termimad = "0.32"
 tempfile = "3.10"
+unicode-width = "0.1"
 
 [dev-dependencies]
 assert_cmd = "2.0"

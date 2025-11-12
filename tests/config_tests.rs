@@ -1,25 +1,43 @@
 use std::env;
 use std::fs;
 use std::path::Path;
+use std::sync::{Mutex, MutexGuard, OnceLock};
 use tempfile::TempDir;
 use tt::config::{Config, ProviderKind};
 
-fn set_tt_config_dir(path: &Path) {
-    unsafe {
-        env::set_var("TT_CONFIG_DIR", path);
+struct EnvGuard {
+    _guard: MutexGuard<'static, ()>,
+}
+
+impl EnvGuard {
+    fn set_path(path: &Path) -> Self {
+        let guard = env_mutex().lock().unwrap();
+        unsafe {
+            env::set_var("TT_CONFIG_DIR", path);
+        }
+        Self { _guard: guard }
+    }
+
+    fn set_raw(value: &str) -> Self {
+        let guard = env_mutex().lock().unwrap();
+        unsafe {
+            env::set_var("TT_CONFIG_DIR", value);
+        }
+        Self { _guard: guard }
     }
 }
 
-fn set_tt_config_dir_raw(value: &str) {
-    unsafe {
-        env::set_var("TT_CONFIG_DIR", value);
+impl Drop for EnvGuard {
+    fn drop(&mut self) {
+        unsafe {
+            env::remove_var("TT_CONFIG_DIR");
+        }
     }
 }
 
-fn clear_tt_config_dir() {
-    unsafe {
-        env::remove_var("TT_CONFIG_DIR");
-    }
+fn env_mutex() -> &'static Mutex<()> {
+    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+    LOCK.get_or_init(|| Mutex::new(()))
 }
 
 fn base_config(provider: ProviderKind) -> Config {
@@ -63,23 +81,21 @@ fn api_base_uses_override_when_present() {
 #[test]
 fn config_dir_respects_tt_config_dir_env() {
     let temp = TempDir::new().unwrap();
-    set_tt_config_dir(temp.path());
+    let _guard = EnvGuard::set_path(temp.path());
     let path = Config::config_dir().expect("config dir");
     assert_eq!(path, temp.path());
-    clear_tt_config_dir();
 }
 
 #[test]
 fn config_dir_rejects_empty_env_value() {
-    set_tt_config_dir_raw("");
+    let _guard = EnvGuard::set_raw("");
     assert!(Config::config_dir().is_err());
-    clear_tt_config_dir();
 }
 
 #[test]
 fn save_is_atomic_and_respects_custom_dir() {
     let temp = TempDir::new().unwrap();
-    set_tt_config_dir(temp.path());
+    let _guard = EnvGuard::set_path(temp.path());
 
     let mut cfg = base_config(ProviderKind::Anthropic);
     cfg.api_key = Some("sk-ant-xyz".into());
@@ -89,6 +105,4 @@ fn save_is_atomic_and_respects_custom_dir() {
     let contents = fs::read_to_string(&config_path).expect("config contents");
     let parsed: Config = serde_json::from_str(&contents).expect("valid json");
     assert_eq!(parsed.api_key.as_deref(), Some("sk-ant-xyz"));
-
-    clear_tt_config_dir();
 }
