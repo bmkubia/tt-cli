@@ -35,6 +35,15 @@ pub fn show() -> Result<()> {
         ("API Base".to_string(), config.api_base()),
         ("Default Model".to_string(), default_model),
         ("API Key".to_string(), api_key_display),
+        ("Show Header".to_string(), humanize_bool(config.show_header)),
+        (
+            "Model In Header".to_string(),
+            humanize_bool(config.show_model_in_header),
+        ),
+        (
+            "Prompt Style".to_string(),
+            config.system_prompt_style.display_name().to_string(),
+        ),
         ("Config File".to_string(), config_path.display().to_string()),
     ];
 
@@ -52,4 +61,12 @@ pub fn show() -> Result<()> {
     }
 
     Ok(())
+}
+
+fn humanize_bool(value: bool) -> String {
+    if value {
+        "Enabled".to_string()
+    } else {
+        "Disabled".to_string()
+    }
 }

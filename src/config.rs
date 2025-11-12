@@ -43,6 +43,25 @@ impl ProviderKind {
     }
 }
 
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum SystemPromptStyle {
+    #[default]
+    Command,
+    Sidekick,
+    Exploration,
+}
+
+impl SystemPromptStyle {
+    pub fn display_name(&self) -> &'static str {
+        match self {
+            SystemPromptStyle::Command => "Command mode",
+            SystemPromptStyle::Sidekick => "Sidekick mode",
+            SystemPromptStyle::Exploration => "Exploration mode",
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     #[serde(default)]
@@ -53,10 +72,24 @@ pub struct Config {
     pub default_model: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub api_base_override: Option<String>,
+    #[serde(default = "default_show_header")]
+    pub show_header: bool,
+    #[serde(default = "default_show_model_in_header")]
+    pub show_model_in_header: bool,
+    #[serde(default)]
+    pub system_prompt_style: SystemPromptStyle,
 }
 
 fn default_model() -> String {
     "claude-haiku-4-5-20251001".to_string()
+}
+
+fn default_show_header() -> bool {
+    true
+}
+
+fn default_show_model_in_header() -> bool {
+    true
 }
 
 const APP_CONFIG_DIR: &str = "tt-cli";
@@ -68,6 +101,9 @@ impl Default for Config {
             api_key: None,
             default_model: default_model(),
             api_base_override: None,
+            show_header: default_show_header(),
+            show_model_in_header: default_show_model_in_header(),
+            system_prompt_style: SystemPromptStyle::default(),
         }
     }
 }
@@ -156,6 +192,14 @@ impl Config {
         }
 
         true
+    }
+
+    pub fn should_show_header(&self) -> bool {
+        self.show_header
+    }
+
+    pub fn should_show_model_in_header(&self) -> bool {
+        self.show_model_in_header && self.show_header
     }
 
     pub fn api_key_preview(&self) -> Option<String> {

@@ -3,7 +3,7 @@ use std::fs;
 use std::path::Path;
 use std::sync::{Mutex, MutexGuard, OnceLock};
 use tempfile::TempDir;
-use tt::config::{Config, ProviderKind};
+use tt::config::{Config, ProviderKind, SystemPromptStyle};
 
 struct EnvGuard {
     _guard: MutexGuard<'static, ()>,
@@ -46,6 +46,9 @@ fn base_config(provider: ProviderKind) -> Config {
         api_key: None,
         default_model: "test-model".into(),
         api_base_override: None,
+        show_header: true,
+        show_model_in_header: true,
+        system_prompt_style: SystemPromptStyle::Command,
     }
 }
 
@@ -105,4 +108,29 @@ fn save_is_atomic_and_respects_custom_dir() {
     let contents = fs::read_to_string(&config_path).expect("config contents");
     let parsed: Config = serde_json::from_str(&contents).expect("valid json");
     assert_eq!(parsed.api_key.as_deref(), Some("sk-ant-xyz"));
+}
+
+#[test]
+fn config_defaults_enable_header_and_command_prompt() {
+    let cfg = Config::default();
+    assert!(cfg.show_header);
+    assert!(cfg.show_model_in_header);
+    assert_eq!(cfg.system_prompt_style, SystemPromptStyle::Command);
+}
+
+#[test]
+fn config_persists_display_preferences() {
+    let temp = TempDir::new().unwrap();
+    let _guard = EnvGuard::set_path(temp.path());
+
+    let mut cfg = base_config(ProviderKind::OpenAi);
+    cfg.show_header = false;
+    cfg.show_model_in_header = false;
+    cfg.system_prompt_style = SystemPromptStyle::Exploration;
+    cfg.save().expect("save config");
+
+    let loaded = Config::load().expect("load config");
+    assert!(!loaded.show_header);
+    assert!(!loaded.show_model_in_header);
+    assert_eq!(loaded.system_prompt_style, SystemPromptStyle::Exploration);
 }

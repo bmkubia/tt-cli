@@ -111,6 +111,8 @@ Setup walks you through:
 1. Selecting a provider (Anthropic/Claude, OpenAI, OpenRouter, or LM Studio via its OpenAI-compatible server)
 2. Supplying the required credential: an API key for Anthropic / OpenAI / OpenRouter, or the LM Studio base URL (defaults to `http://localhost:1234/v1`)
 3. Picking a default model from the provider's live `/v1/models` response (with a manual entry fallback when offline)
+4. Tuning the streaming response header (toggle the response banner and whether the model name appears in it)
+5. Choosing a system prompt style (Command mode for terse answers, Sidekick mode for light prose, or Exploration mode for deeper explanations)
 
 Configuration is saved to:
 
@@ -219,11 +221,21 @@ All providers use dynamic model discovery via their `/v1/models` endpoint, ensur
 
 ### View current configuration
 
-To see your current provider, API base, masked API key (if applicable), and default model:
+To see your current provider, API base, masked API key (if applicable), default model, and response presentation preferences:
 
 ```bash
 tt config
 ```
+
+### Customize response presentation
+
+`tt config` shows (and `tt setup` configures) three options that shape each response:
+
+- **Show header** – toggles the “Worked for …” banner that appears when a reply starts streaming.
+- **Show model in header** – adds or removes the `── model-name ─` suffix on the banner.
+- **System prompt style** – pick between Command (bare commands), Sidekick (one friendly sentence plus the command), or Exploration (deeper explanations before the command).
+
+Re-run `tt setup` at any time to adjust these settings, or edit `~/.config/tt-cli/config.json` directly if you prefer.
 
 ### Change model
 

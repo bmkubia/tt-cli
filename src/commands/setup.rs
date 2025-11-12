@@ -27,6 +27,15 @@ pub async fn run() -> Result<()> {
     let default_model =
         interaction::select_model(provider, api_key.as_deref(), &api_base, current_model).await?;
 
+    let show_header =
+        interaction::prompt_toggle("Show streaming response header", config.show_header)?;
+    let show_model_in_header = if show_header {
+        interaction::prompt_toggle("Show model name in header", config.show_model_in_header)?
+    } else {
+        false
+    };
+    let prompt_style = interaction::select_prompt_style(config.system_prompt_style)?;
+
     config.provider = provider;
     config.api_key = api_key;
     config.default_model = default_model;
@@ -35,6 +44,9 @@ pub async fn run() -> Result<()> {
     } else {
         None
     };
+    config.show_header = show_header;
+    config.show_model_in_header = show_model_in_header;
+    config.system_prompt_style = prompt_style;
 
     config.save().context("Failed to save configuration")?;
 

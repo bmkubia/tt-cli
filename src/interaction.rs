@@ -1,7 +1,7 @@
-use crate::config::ProviderKind;
+use crate::config::{ProviderKind, SystemPromptStyle};
 use crate::models;
 use anyhow::{Context, Result};
-use dialoguer::{Input, Select};
+use dialoguer::{Confirm, Input, Select};
 
 pub fn select_provider(current: ProviderKind) -> Result<ProviderKind> {
     let providers = [
@@ -154,4 +154,44 @@ fn prompt_custom_model(provider: ProviderKind, current_model: Option<&str>) -> R
 
         return Ok(trimmed.to_string());
     }
+}
+
+pub fn prompt_toggle(prompt: &str, default: bool) -> Result<bool> {
+    Confirm::new()
+        .with_prompt(prompt)
+        .default(default)
+        .interact()
+        .context("Failed to read option")
+}
+
+pub fn select_prompt_style(current: SystemPromptStyle) -> Result<SystemPromptStyle> {
+    let styles = [
+        (
+            SystemPromptStyle::Command,
+            "Command mode — terse answers like `brew upgrade`.",
+        ),
+        (
+            SystemPromptStyle::Sidekick,
+            "Sidekick mode — quick context before or around the command.",
+        ),
+        (
+            SystemPromptStyle::Exploration,
+            "Exploration mode — deeper explanations with the final command at the end.",
+        ),
+    ];
+
+    let labels: Vec<&str> = styles.iter().map(|(_, desc)| *desc).collect();
+    let default_index = styles
+        .iter()
+        .position(|(style, _)| *style == current)
+        .unwrap_or(0);
+
+    let selection = Select::new()
+        .with_prompt("System prompt style")
+        .items(&labels)
+        .default(default_index)
+        .interact()
+        .context("Failed to read prompt style selection")?;
+
+    Ok(styles[selection].0)
 }

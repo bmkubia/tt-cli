@@ -1,4 +1,8 @@
-use crate::{client::ModelClient, config::Config, loader};
+use crate::{
+    client::ModelClient,
+    config::{Config, SystemPromptStyle},
+    loader,
+};
 use anyhow::{Context, Result};
 use crossterm::{
     cursor, execute,
@@ -24,7 +28,14 @@ pub async fn run(question: &str) -> Result<()> {
     let start_time = Instant::now();
     let mut header_printed = false;
     let mut renderer = ResponseRenderer::new();
-    let system_prompt = build_system_prompt(&config.default_model);
+    let system_prompt = build_system_prompt(&config.default_model, config.system_prompt_style);
+    let show_header = config.should_show_header();
+    let header_model_holder = if config.should_show_model_in_header() {
+        Some(config.default_model.clone())
+    } else {
+        None
+    };
+    let header_model = header_model_holder.as_deref();
 
     let mut stream = client
         .ask_stream(question, &config.default_model, &system_prompt)
@@ -40,8 +51,10 @@ pub async fn run(question: &str) -> Result<()> {
 
                 if !header_printed {
                     stop_loader(&mut loader_handle).await;
-                    print_response_header(start_time.elapsed(), &config.default_model)
-                        .context("Failed to write response header")?;
+                    if show_header {
+                        print_response_header(start_time.elapsed(), header_model)
+                            .context("Failed to write response header")?;
+                    }
                     header_printed = true;
                 }
 
@@ -80,12 +93,23 @@ async fn stop_loader(loader_handle: &mut Option<loader::LoaderHandle>) {
     }
 }
 
-fn build_system_prompt(model_name: &str) -> String {
+fn build_system_prompt(model_name: &str, style: SystemPromptStyle) -> String {
     let os_name = current_os_display_name();
     let shell_name = current_shell_display_name();
-    format!(
-        "You are the command line assistant `tt-cli`. You translate natural-language requests into shell commands.\n\nEnvironment:\n- OS: {os_name}\n- Shell: {shell_name}\n- Model: {model_name}\n\nRules:\n- Prefer minimal prose.\n- One command per line.\n- No placeholders. Quote paths and variables safely.\n- Prefer non-destructive forms and --dry-run/-n when available."
-    )
+    let environment =
+        format!("Environment:\n- OS: {os_name}\n- Shell: {shell_name}\n- Model: {model_name}");
+
+    match style {
+        SystemPromptStyle::Command => format!(
+            "You are `tt-cli`. You translate natural-language requests into shell commands.\n\n{environment}\n\nRules:\n- Output one command in backticks with no prose.\n- No placeholders. Quote paths and variables safely.\n- Prefer non-destructive forms and --dry-run/-n when available."
+        ),
+        SystemPromptStyle::Sidekick => format!(
+            "You are `tt-cli`, a quick terminal sidekick. Explain what to run in one short sentence and immediately follow it with the exact command wrapped in backticks.\n\n{environment}\n\nGuidelines:\n- Mention important context or safety tips before the command.\n- Keep explanations concise (one or two sentences) and avoid filler.\n- Provide exactly one command, fully quoted and ready to paste."
+        ),
+        SystemPromptStyle::Exploration => format!(
+            "You are `tt-cli`, an exploratory shell mentor. Provide a short paragraph that explains the approach, note important flags or trade-offs, then present the final command in backticks or a fenced block.\n\n{environment}\n\nGuidelines:\n- Dive deeper than Sidekick mode: describe why the command works and when to be cautious.\n- Keep the final command easy to spot at the end.\n- Never invent placeholders; quote paths/variables safely and prefer non-destructive flags."
+        ),
+    }
 }
 
 fn current_os_display_name() -> String {
@@ -216,26 +240,35 @@ fn count_common_prefix(a: &[String], b: &[String]) -> usize {
         .count()
 }
 
-fn print_response_header(duration: Duration, model: &str) -> Result<()> {
+fn print_response_header(duration: Duration, model: Option<&str>) -> Result<()> {
     let (width, _) = terminal::size().unwrap_or((100, 0));
     let label = format!("Worked for {}", loader::format_elapsed(duration));
-    let model_label = format!(" {model} ");
+    let model_label = model.map(|m| format!(" {m} "));
 
     let desired_width = width.max(20) as usize;
     let left_part = format!("─ {label} ");
     let left_len = left_part.chars().count();
-    let model_len = model_label.chars().count();
-
     let mut line = left_part;
-    let separator_len = desired_width.saturating_sub(left_len + model_len + 1);
-    if separator_len > 0 {
-        line.push_str(&"─".repeat(separator_len));
-        line.push_str(&model_label);
-        line.push('─');
-    } else {
-        let remaining = desired_width.saturating_sub(left_len);
-        if remaining > 0 {
-            line.push_str(&"─".repeat(remaining));
+    match model_label {
+        Some(model_label) => {
+            let model_len = model_label.chars().count();
+            let separator_len = desired_width.saturating_sub(left_len + model_len + 1);
+            if separator_len > 0 {
+                line.push_str(&"─".repeat(separator_len));
+                line.push_str(&model_label);
+                line.push('─');
+            } else {
+                let remaining = desired_width.saturating_sub(left_len);
+                if remaining > 0 {
+                    line.push_str(&"─".repeat(remaining));
+                }
+            }
+        }
+        None => {
+            let remaining = desired_width.saturating_sub(left_len);
+            if remaining > 0 {
+                line.push_str(&"─".repeat(remaining));
+            }
         }
     }
 
