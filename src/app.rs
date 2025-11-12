@@ -5,7 +5,7 @@ use clap::{Parser, Subcommand};
 #[derive(Parser)]
 #[command(
     name = "tt",
-    about = "Ask Claude, OpenAI, or LM Studio models from the terminal with Codex-style answers",
+    about = "Transform natural language into shell commands.",
     version = crate::version::TT_VERSION
 )]
 pub struct Cli {

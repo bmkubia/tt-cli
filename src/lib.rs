@@ -7,4 +7,5 @@ pub mod config;
 pub mod interaction;
 pub mod loader;
 pub mod models;
+pub mod ui;
 pub mod version;
