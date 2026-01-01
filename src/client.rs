@@ -497,6 +497,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used, clippy::expect_used)]
     fn interpret_emits_openai_and_anthropic_payloads() {
         let openai_event = SseEvent {
             event: None,

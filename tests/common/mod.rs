@@ -6,6 +6,7 @@ pub struct TestEnv {
 }
 
 impl TestEnv {
+    #[allow(clippy::expect_used)]
     pub fn new() -> Self {
         let temp_config = TempDir::new().expect("temp dir");
         Self { temp_config }

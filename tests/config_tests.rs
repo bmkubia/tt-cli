@@ -5,10 +5,12 @@ use std::sync::{Mutex, MutexGuard, OnceLock};
 use tempfile::TempDir;
 use tt::config::{Config, ProviderKind, SystemPromptStyle};
 
+#[allow(clippy::unwrap_used, clippy::expect_used)]
 struct EnvGuard {
     _guard: MutexGuard<'static, ()>,
 }
 
+#[allow(clippy::unwrap_used)]
 impl EnvGuard {
     fn set_path(path: &Path) -> Self {
         let guard = env_mutex().lock().unwrap();
@@ -82,6 +84,7 @@ fn api_base_uses_override_when_present() {
 }
 
 #[test]
+#[allow(clippy::unwrap_used, clippy::expect_used)]
 fn config_dir_respects_tt_config_dir_env() {
     let temp = TempDir::new().unwrap();
     let _guard = EnvGuard::set_path(temp.path());
@@ -96,6 +99,7 @@ fn config_dir_rejects_empty_env_value() {
 }
 
 #[test]
+#[allow(clippy::unwrap_used, clippy::expect_used)]
 fn save_is_atomic_and_respects_custom_dir() {
     let temp = TempDir::new().unwrap();
     let _guard = EnvGuard::set_path(temp.path());
@@ -119,6 +123,7 @@ fn config_defaults_enable_header_and_command_prompt() {
 }
 
 #[test]
+#[allow(clippy::unwrap_used, clippy::expect_used)]
 fn config_persists_display_preferences() {
     let temp = TempDir::new().unwrap();
     let _guard = EnvGuard::set_path(temp.path());
